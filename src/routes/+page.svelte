@@ -12,6 +12,7 @@
   // Boost(Highcharts);
 
   import { Chart } from "@highcharts/svelte";
+
   function getData(n: number) {
     const arr = [];
     let a, b, c, spike;
@@ -53,9 +54,13 @@
   }
 
   const n = 48000,
-    s = 32,
-    series = getSeries(n, s);
+    s = 32;
+  // java_seies = getSeries(n, s);
+  const series = invoke("get_series", { n: n, s: s });
+  // const series = getSeries(n, s);
+  // console.log(series_js);
 
+  // console.log(java_seies);
   console.time("line");
   let options: Highcharts.Options = {
     chart: {
@@ -107,7 +112,7 @@
       valueDecimals: 2,
     },
 
-    series: series,
+    series: [series],
   };
   console.timeEnd("line");
 
