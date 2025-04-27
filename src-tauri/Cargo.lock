@@ -3964,6 +3964,7 @@ dependencies = [
 name = "thunderpulse_app"
 version = "0.1.0"
 dependencies = [
+ "rand 0.9.1",
  "serde",
  "serde_json",
  "tauri",
