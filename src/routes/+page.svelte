@@ -1,120 +1,52 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import FileBrowser from "./lib/FileBrowser.svelte";
+  import { onMount } from "svelte";
 
-  // import Highcharts from "highcharts";
-  import * as Highcharts from "highcharts";
+  import Highcharts from "highcharts";
+  // import * as Highcharts from "highcharts";
   import "highcharts/modules/exporting";
-  // import Boost from "highcharts/modules/boost";
   import "highcharts/modules/boost";
-  // Apply Highcharts modules
-  // ExportingModule(Highcharts);
-  // Boost(Highcharts);
 
   import { Chart } from "@highcharts/svelte";
 
-  function getData(n: number) {
-    const arr = [];
-    let a, b, c, spike;
-    for (let i = 0; i < n; i = i + 1) {
-      if (i % 100 === 0) {
-        a = 2 * Math.random();
-      }
-      if (i % 1000 === 0) {
-        b = 2 * Math.random();
-      }
-      if (i % 10000 === 0) {
-        c = 2 * Math.random();
-      }
-      if (i % 50000 === 0) {
-        spike = 0;
-      } else {
-        spike = 0;
-      }
-      arr.push([i, 2 * Math.sin(i / 100) + a + b + c + spike + Math.random()]);
-    }
-    return arr;
+  interface SeriesObject {
+    data: [number, number][];
+    lineWidth: number;
+    boostThreshold: number;
   }
 
-  function getSeries(n: number, s: number) {
-    let i = 0;
-    const r = [];
-
-    for (; i < s; i++) {
-      r.push({
-        data: getData(n),
-        lineWidth: 1,
-        // yAxis: s,
-        // xAxis: 0,
-        boostThreshold: 1,
-      });
-    }
-
-    return r;
+  function getHighchartsSeries(
+    n: number,
+    s: number,
+  ): Promise<Highcharts.SeriesLineOptions[]> {
+    return invoke<SeriesObject[]>("get_series", { n, s }).then((seriesArr) =>
+      seriesArr.map((s) => ({
+        type: "line",
+        data: s.data,
+        lineWidth: s.lineWidth,
+        boostThreshold: s.boostThreshold,
+      })),
+    );
   }
+  let n = 48000;
+  let s = 16;
+  let seriesPromise = getHighchartsSeries(n, s);
 
-  const n = 48000,
-    s = 32;
-  // java_seies = getSeries(n, s);
-  const series = invoke("get_series", { n: n, s: s });
-  // const series = getSeries(n, s);
-  // console.log(series_js);
-
-  // console.log(java_seies);
-  console.time("line");
-  let options: Highcharts.Options = {
-    chart: {
-      zooming: {
-        type: "x",
-      },
-    },
-
-    title: {
-      text: "Highcharts drawing " + n * s + " points across " + s + " series",
-    },
-
-    legend: {
-      enabled: false,
-    },
-
+  let baseOptions: Highcharts.Options = {
+    chart: { zooming: { type: "x" } },
+    title: { text: `Highcharts drawing ${n * s} points across ${s} series` },
+    legend: { enabled: false },
     boost: {
       useGPUTranslations: true,
-      debug: {
-        timeRendering: true,
-        timeSetup: true,
-      },
-      // seriesThreshold: 5,
+      debug: { timeRendering: true, timeSetup: true },
     },
-
-    xAxis: {
-      min: 0,
-      max: n,
-      ordinal: true,
-    },
-
-    navigator: {
-      xAxis: {
-        ordinal: false,
-        min: 0,
-        max: 10,
-      },
-    },
-    yAxis: {
-      min: -3,
-      max: 9,
-    },
-
-    subtitle: {
-      text: "Using the Boost module",
-    },
-
-    tooltip: {
-      valueDecimals: 2,
-    },
-
-    series: [series],
+    xAxis: { min: 0, max: n, ordinal: true },
+    navigator: { xAxis: { ordinal: false, min: 0, max: 10 } },
+    yAxis: { min: -3, max: 9 },
+    subtitle: { text: "Using the Boost module" },
+    tooltip: { valueDecimals: 2 },
   };
-  console.timeEnd("line");
 
   let { onFileSelected } = $props<{
     onFileSelected: (selectedPath: string | string[] | null) => void;
@@ -122,7 +54,7 @@
 </script>
 
 <main class="container">
-  <h1>Thunderpluse</h1>
+  <h1>Thunderpulse</h1>
   <div class="two-column-container">
     <div class="column left-column">
       <h2>Left Column</h2>
@@ -130,7 +62,13 @@
     </div>
     <div class="column righ-column">
       <h2>Right Column</h2>
-      <Chart {options} highcharts={Highcharts} />
+      {#await seriesPromise}
+        <p>Loading chart data...</p>
+      {:then series}
+        <Chart options={{ ...baseOptions, series }} />
+      {:catch error}
+        <p style="color:crimson;">Error loading chart: {error}</p>
+      {/await}
     </div>
   </div>
 </main>

@@ -7,10 +7,10 @@ use serde::Serialize;
 pub struct SeriesObject {
     // Use Vec<[f64; 2]> for [[x1, y1], [x2, y2], ...] structure
     data: Vec<[f64; 2]>,
-    #[serde(rename = "lineWidth")] // Optional: rename for JSON compatibility
-    line_width: u32, // Use appropriate integer type
-    #[serde(rename = "boostThreshold")] // Optional: rename for JSON compatibility
-    boost_threshold: u32, // Use appropriate integer type
+    #[serde(rename = "lineWidth")]
+    line_width: i16,
+    #[serde(rename = "boostThreshold")]
+    boost_threshold: i16,
 }
 
 // Generates a single series data array
@@ -55,16 +55,14 @@ pub fn get_data(n: usize) -> Vec<[f64; 2]> {
 // Equivalent to the TypeScript getSeries function
 #[tauri::command]
 pub fn get_series(n: usize, s: usize) -> Vec<SeriesObject> {
-    let mut series_vec: Vec<SeriesObject> = Vec::with_capacity(s); // Pre-allocate
-
+    let mut series_vec: Vec<SeriesObject> = Vec::with_capacity(s);
     for _ in 0..s {
-        // We don't need the loop index 'i' inside
-        let data = get_data(n); // Generate data for one series
+        let data = get_data(n);
         series_vec.push(SeriesObject {
-            data, // Assign the generated data
+            data,
             line_width: 1,
             boost_threshold: 1,
         });
     }
-    series_vec // Return the vector of series objects
+    return series_vec;
 }
